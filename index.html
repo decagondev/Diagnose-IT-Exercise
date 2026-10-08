@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagnose It — AI Workflow Bottleneck · Case Study</title>
+<style>
+:root{--bg:#000;--fg:#fff;--mut:#9a9a9a;--line:#262626;--card:#0d0d0d;--acc:#fff;--money:#7ee08a;--growth:#7cb8ff;--risk:#ff7a7a}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif}
+a{color:var(--fg)}
+nav{position:sticky;top:0;z-index:9;background:rgba(0,0,0,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);display:flex;gap:18px;padding:12px 28px;overflow-x:auto;white-space:nowrap;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+nav a{color:var(--mut);text-decoration:none}nav a:hover,nav a.on{color:var(--fg)}
+main{max-width:1040px;margin:0 auto;padding:0 28px 80px}
+section{padding:64px 0 8px;border-bottom:1px solid var(--line)}
+h1{font-size:clamp(40px,7vw,84px);line-height:1;margin:0 0 18px;letter-spacing:-.03em;font-weight:800}
+h2{font-size:30px;margin:0 0 18px;letter-spacing:-.01em}h3{margin:22px 0 8px}
+.kicker{color:var(--mut);text-transform:uppercase;letter-spacing:.14em;font-size:12px}
+.hero{padding:90px 0 50px}
+blockquote{margin:24px 0;padding:22px 26px;border-left:3px solid var(--fg);background:var(--card);font-size:20px;line-height:1.5}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.card b{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid}
+.money{color:var(--money);border-color:var(--money)}.growth{color:var(--growth);border-color:var(--growth)}.risk{color:var(--risk);border-color:var(--risk)}
+.sym{color:var(--mut);border-color:var(--mut)}
+.btn{background:var(--fg);color:#000;border:0;border-radius:6px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:14px}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.ghost.on{border-color:var(--fg)}
+.toggle{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+.ladder{list-style:none;padding:0;margin:0;counter-reset:r}
+.rung{position:relative;margin:0 0 10px;padding:14px 16px 14px 56px;border:1px solid var(--line);border-radius:10px;background:var(--card);opacity:.15;transform:translateY(4px);transition:.35s}
+.rung.show{opacity:1;transform:none}
+.rung::before{counter-increment:r;content:counter(r);position:absolute;left:16px;top:14px;width:26px;height:26px;border-radius:50%;border:1px solid var(--fg);display:grid;place-items:center;font-size:13px}
+.rung .q{color:var(--mut);font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.rung.bed{border-color:var(--fg)}
+.constraint{font-size:22px;line-height:1.45;padding:26px;border:2px solid var(--fg);border-radius:12px;margin:20px 0}
+.score td:not(:first-child),.score th:not(:first-child){text-align:center}
+.bar{height:6px;background:var(--line);border-radius:3px;margin-top:4px}.bar i{display:block;height:100%;background:var(--fg);border-radius:3px}
+details{border:1px solid var(--line);border-radius:10px;background:var(--card);margin:0 0 10px;padding:0 16px}
+summary{cursor:pointer;padding:14px 0;font-weight:600;list-style:none}summary::-webkit-details-marker{display:none}
+summary::before{content:"+ ";color:var(--mut)}details[open] summary::before{content:"– "}
+details p{margin:0 0 14px;color:#ddd}
+.handin{background:#fff;color:#000;border-radius:12px;padding:28px;position:relative}
+.handin p{margin:0 0 10px}.handin .btn{background:#000;color:#fff;position:absolute;top:18px;right:18px}
+svg text{font-family:inherit}
+.hyp{color:var(--mut);font-size:13px}
+footer{color:var(--mut);font-size:13px;padding:30px 0}
+@media print{
+ :root{--bg:#fff;--fg:#000;--mut:#555;--line:#ccc;--card:#fff}
+ nav,.toggle,.btn{display:none!important}.rung{opacity:1!important;transform:none!important}
+ details{border:0}details>*{display:block}section{break-inside:avoid-page}
+ .handin{border:2px solid #000}svg rect{stroke:#000}svg text{fill:#000}svg path,svg line{stroke:#000}
+}
+</style></head><body>
+<nav id="nav">
+ <a href="#problem">Problem</a><a href="#symptoms">Symptom vs constraint</a><a href="#ladder">Why ladder</a><a href="#diagnosis">Diagnosis</a><a href="#agents">Agents</a><a href="#workflow">Workflow</a><a href="#qa">Q&amp;A</a><a href="#handin">Hand-in</a><a href="#sources">Sources</a>
+</nav>
+<main>
+<section class="hero" id="problem">
+ <div class="kicker">Gauntlet · Your turn · Case study</div>
+ <h1>Don't solve it.<br>Diagnose it.</h1>
+ <blockquote>"We need more AI workflows across the company, but most people don't know how to build them. The few engineers who do are completely bottlenecked — they can't keep up with demand. Everything is slowing down."</blockquote>
+ <div class="grid">
+  <div class="card"><b>Task</b>Find the real constraint, not the symptom.</div>
+  <div class="card"><b>Ask</b>Why does it matter that it's slow? Why has the team stopped using it?</div>
+  <div class="card"><b>Keep going</b>Until you hit <span class="tag money">money</span> <span class="tag growth">growth</span> <span class="tag risk">risk</span></div>
+  <div class="card"><b>Hand-in</b>Under 5 minutes. No solution.</div>
+ </div>
+</section>
+
+<section id="symptoms">
+ <h2>1 · Split the sentence</h2>
+ <p>The stated problem is a solution someone already picked, plus two symptoms. Only one part of it was actually observed.</p>
+ <table><tr><th>Fragment</th><th>Type</th><th>What it really is</th></tr>
+  <tr><td>"We need more AI workflows"</td><td><span class="tag sym">Goal</span></td><td>A pre-chosen solution. <em>More</em> isn't the same as <em>more used</em>.</td></tr>
+  <tr><td>"Most people don't know how to build"</td><td><span class="tag sym">Assumed cause</span></td><td>Blames skills before ownership, trust, and fit have been tested.</td></tr>
+  <tr><td>"Engineers are bottlenecked"</td><td><span class="tag sym">Observed</span></td><td>A queue. It's the <em>output</em> of the constraint.</td></tr>
+  <tr><td>"Everything is slowing down"</td><td><span class="tag sym">Vague</span></td><td>Not tied to any cost yet.</td></tr>
+  <tr><td>"Stopped using it"</td><td><span class="tag sym">Clue</span></td><td>Workflows already exist and are being abandoned.</td></tr>
+ </table>
+ <h3>Symptom vs constraint</h3>
+ <table><tr><th>Surface symptom</th><th>Real constraint underneath</th><th>Hits</th></tr>
+  <tr><td>Not enough AI builders</td><td>Every workflow has to be built and maintained by specialists. There's no owner and no approved data path.</td><td><span class="tag growth">growth</span></td></tr>
+  <tr><td>Everything is slow</td><td>Lead time is longer than the need lasts, so work is cancelled, not delayed</td><td><span class="tag money">money</span></td></tr>
+  <tr><td>Team stopped using it</td><td>Shipped flows break, don't fit, or have no owner; people abandon the request path</td><td><span class="tag money">money</span> <span class="tag risk">risk</span></td></tr>
+  <tr><td>Queue is huge</td><td>The queue undercounts demand because real work leaks to DMs and personal AI tools</td><td><span class="tag risk">risk</span></td></tr>
+ </table>
+</section>
+
+<section id="ladder">
+ <h2>2 · The why ladder</h2>
+ <p>Pick a branch, then reveal one "why" at a time until you hit bedrock.</p>
+ <div class="toggle" id="branches">
+  <button class="btn ghost on" data-b="A">A · Why does slow matter?</button>
+  <button class="btn ghost" data-b="B1">B1 · Stopped using the request path</button>
+  <button class="btn ghost" data-b="B2">B2 · Stopped using what shipped</button>
+ </div>
+ <ol class="ladder" id="rungs"></ol>
+ <div class="toggle"><button class="btn" id="next">Next why ↓</button><button class="btn ghost" id="all">Reveal all</button><button class="btn ghost" id="reset">Reset</button></div>
+ <p class="hyp">Scenario details (six weeks, churn brief) are hypothetical and only illustrate the method.</p>
+</section>
+
+<section id="diagnosis">
+ <h2>3 · My diagnosis</h2>
+ <div class="constraint"><span class="kicker">Named constraint</span><br><strong>Conversion, not capacity:</strong> the company has no trusted path from a live business need to an owned, used workflow that doesn't run through a few specialists, so needs expire in the queue, shipped flows go unused, and demand leaks into ungoverned tools.</div>
+ <p>In Theory of Constraints terms, the engineers are the visible bottleneck. The real constraint is a <strong>policy</strong>: the rule that every workflow is custom engineering. Hiring or training is step 4, <em>Elevate</em>, which should come after <em>Identify → Exploit → Subordinate</em>.</p>
+ <h3>Competing hypotheses</h3>
+ <table><tr><th>Hypothesis</th><th>Confirms</th><th>Kills</th></tr>
+  <tr><td><strong>H1 Conversion / trust</strong> (pick)</td><td>Lead time &gt; need half-life; low day-30 survival; lots of off-ticket demand</td><td>Shipped flows are heavily used</td></tr>
+  <tr><td>H2 Pure capacity</td><td>Flows are used; backlog is current and valuable</td><td>Many stale or dead tickets</td></tr>
+  <tr><td>H3 No prioritisation</td><td>First-come-first-served; low-value asks take most builder hours</td><td>A value-ranked queue exists and top items still wait</td></tr>
+  <tr><td>H4 Hype-driven demand</td><td>Asks have no owner, metric, or deadline</td><td>Every ask has an owner and a metric</td></tr>
+  <tr><td>H5 Skills gap</td><td>Owners and data paths exist; only know-how is missing</td><td>Trained people still don't build, or their flows aren't used</td></tr>
+ </table>
+ <h3>Cheapest evidence first</h3>
+ <div class="grid">
+  <div class="card"><b>1 · Ticket autopsy</b>Last 20 asks: opened, shipped, first use, was the need still alive?</div>
+  <div class="card"><b>2 · Day-30 survival</b>% of shipped flows still running, and who owns each one.</div>
+  <div class="card"><b>3 · Shadow demand</b>Pulse survey plus SSO/expense logs for AI tools.</div>
+  <div class="card"><b>4 · Builder time split</b>New builds vs fixes vs meetings about the queue.</div>
+ </div>
+</section>
+
+<section id="agents">
+ <h2>4 · Three agents, scored</h2>
+ <table class="score" id="score"><tr><th>Criterion</th><th>Claude</th><th>Grok</th><th>Gemini</th></tr></table>
+ <div class="grid">
+  <div class="card"><b>Claude</b>Best instincts: "solution in a problem's coat", the adoption branch, honest labelling of numbers. Never commits to a constraint, so it isn't ready to hand in.</div>
+  <div class="card"><b>Grok</b>Strongest diagnosis: claim split, need half-life, two kinds of "stopped", kill/confirm metrics. Refuses to pitch a fix.</div>
+  <div class="card"><b>Gemini</b>Most persuasive, least valid. Invents −14% conversion, $200k salaries, and 30% of sprints as facts, and ends with a platform directive, which breaks "don't solve it".</div>
+ </div>
+</section>
+
+<section id="workflow">
+ <h2>5 · The workflow</h2>
+ <svg viewBox="0 0 1000 300" width="100%" role="img" aria-label="Diagnosis workflow">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#fff"/></marker></defs>
+  <g fill="none" stroke="#fff" stroke-width="1.4">
+   <rect x="10" y="120" width="140" height="60" rx="8"/><rect x="190" y="120" width="140" height="60" rx="8"/>
+   <rect x="380" y="30" width="170" height="60" rx="8"/><rect x="380" y="210" width="170" height="60" rx="8"/>
+   <rect x="600" y="120" width="150" height="60" rx="8"/><rect x="800" y="120" width="180" height="60" rx="8" stroke-width="2.5"/>
+   <line x1="150" y1="150" x2="188" y2="150" marker-end="url(#ar)"/>
+   <path d="M330 150 C355 150,355 60,378 60" marker-end="url(#ar)"/><path d="M330 150 C355 150,355 240,378 240" marker-end="url(#ar)"/>
+   <path d="M550 60 C575 60,575 150,598 150" marker-end="url(#ar)"/><path d="M550 240 C575 240,575 150,598 150" marker-end="url(#ar)"/>
+   <line x1="750" y1="150" x2="798" y2="150" marker-end="url(#ar)"/>
+   <path d="M675 120 C675 85,640 85,640 110" stroke-dasharray="4 4" marker-end="url(#ar)"/>
+  </g>
+  <g fill="#fff" font-size="14" text-anchor="middle">
+   <text x="80" y="146">1 · Split</text><text x="80" y="164" font-size="11" fill="#9a9a9a">seen vs believed</text>
+   <text x="260" y="146">2 · Define slow</text><text x="260" y="164" font-size="11" fill="#9a9a9a">lead time vs half-life</text>
+   <text x="465" y="56">A · Why slow matters</text><text x="465" y="74" font-size="11" fill="#9a9a9a">→ money / growth</text>
+   <text x="465" y="236">B · Why stopped using</text><text x="465" y="254" font-size="11" fill="#9a9a9a">B1 path · B2 product → risk</text>
+   <text x="675" y="146">So what? (loop)</text><text x="675" y="164" font-size="11" fill="#9a9a9a">until $ / growth / risk</text>
+   <text x="890" y="146" font-weight="700">Name constraint</text><text x="890" y="164" font-size="11" fill="#9a9a9a">+ kill/confirm metrics</text>
+  </g>
+ </svg>
+ <div class="grid">
+  <div class="card"><b>5-minute hand-in</b>0:00 split · 0:45 branch A · 2:00 branch B · 3:15 constraint · 3:45 metrics · 4:30 remove any solution language</div>
+  <div class="card"><b>10-minute live</b>Claims · expired request · hinge: is shipped work used? · B1 shadow demand · B2 owner/fit/trust · money/growth/risk · stop</div>
+  <div class="card"><b>Stop when</b>The answer is a cost, a scaling limit, or a named risk, and one sentence explains every branch.</div>
+  <div class="card"><b>Anti-patterns</b>Jumping to solutions · inventing data · stopping at a symptom · single-chain 5 Whys · counting the queue as demand · elevating first</div>
+ </div>
+</section>
+
+<section id="qa">
+ <h2>6 · Questions &amp; pushbacks</h2>
+ <div id="qalist"></div>
+</section>
+
+<section id="handin">
+ <h2>7 · The 5-minute hand-in</h2>
+ <div class="handin" id="handtext">
+  <button class="btn" id="copy">Copy</button>
+  <p><strong>Diagnosis: AI workflow bottleneck</strong></p>
+  <p>"We need more AI workflows" is a solution someone has already picked. The only thing actually observed is a queue in front of a few engineers. "People can't build" is an assumed cause, and "everything is slowing" isn't tied to any cost yet.</p>
+  <p><strong>Why does slow matter?</strong> Requests wait longer than the need lasts. A churn brief that arrives after quarter close has been cancelled, not delayed. Specialist hours go into work that expires, so cost grows with each request while value doesn't (money). AI use can't spread faster than three people (growth).</p>
+  <p><strong>Why has the team stopped using it?</strong> There are two kinds of stopping. Some people abandon the request path: demand moves to Slack DMs and personal AI tools, so customer data leaks and one engineer becomes a single point of failure (risk). Others abandon what shipped: flows break, answer the wrong question, or have no owner, which means sunk build cost and unused flows still running in production (money and risk).</p>
+  <p><strong>Constraint:</strong> conversion, not capacity. The company has no trusted path from a live business need to an owned, used workflow that doesn't run through a few specialists. More builders or more training would just feed more work into the same broken path.</p>
+  <p><strong>What would confirm or kill this:</strong> (1) ask-to-first-use time vs how long each need stays valid; (2) share of shipped flows still running at day 30, and whether each has an owner; (3) demand that never became a ticket. If shipped flows are well used and the backlog is still current, I'm wrong and it really is capacity.</p>
+ </div>
+</section>
+
+<section id="sources">
+ <h2>Sources</h2>
+ <ul>
+  <li>Goldratt, Five Focusing Steps: <a href="https://www.tocinstitute.org/five-focusing-steps.html">TOC Institute</a> · <a href="https://northriverpress.com/wp-content/uploads/2018/01/Free-download-5FS.pdf">Goldratt 5FS (PDF)</a>, including the warning that most systems are limited mainly by policy constraints</li>
+  <li>5 Whys and its limits: <a href="https://en.wikipedia.org/wiki/Five_whys">Five whys (Wikipedia)</a></li>
+  <li>Queue lead time: <a href="https://en.wikipedia.org/wiki/Little%27s_law">Little's Law</a>, L = λW, so lead time = WIP ÷ throughput</li>
+  <li>Shadow AI risk: <a href="https://newsroom.ibm.com/2025-07-30-ibm-report-13-of-organizations-reported-breaches-of-ai-models-or-applications,-97-of-which-reported-lacking-proper-ai-access-controls">IBM Cost of a Data Breach 2025</a>: 1 in 5 organisations had a breach due to shadow AI; high shadow-AI use added about $670K</li>
+  <li>Pilot stalls and shadow AI use: <a href="https://virtualizationreview.com/articles/2025/08/19/mit-report-finds-most-ai-business-investments-fail-reveals-genai-divide.aspx">MIT NANDA "GenAI Divide" 2025 (coverage)</a>, with a <a href="https://aiunite.org/reports/mit-nanda-genai-divide-2025/">sample-size caveat</a>: treat the figures as directional</li>
+ </ul>
+ <footer>Illustrative scenario figures are marked hypothetical. No other numbers were invented.</footer>
+</section>
+</main>
+<script>
+const L={
+ A:[["Slow how?","Ask-to-first-use takes about six weeks (hyp.). By Little's Law, lead time = WIP ÷ throughput, and three builders can't drain a growing backlog."],
+    ["Why does that matter?","The need has expired by the time the workflow ships. The churn brief lands after quarter close. That work was cancelled, not delayed."],
+    ["Why does that matter?","People stop asking. They do it by hand or in personal AI tools, and the official queue undercounts real demand."],
+    ["Bedrock","Specialist hours are spent on expiring work while manual cost carries on, so cost grows with each request but value doesn't.","money"],
+    ["Bedrock","AI use can't spread faster than three people. Each new team adds demand but no throughput.","growth"]],
+ B1:[["What stopped?","People stopped using the request form. It's \"where work goes to die.\""],
+    ["Where does the work go?","Slack DMs to one engineer, side spreadsheets, consumer LLMs."],
+    ["Why does that matter?","The real queue is now a person, with customer data in unsanctioned tools."],
+    ["Bedrock","Key-person dependency plus data leakage. IBM 2025: 1 in 5 organisations had a breach due to shadow AI.","risk"]],
+ B2:[["What stopped?","People stopped using what shipped: it broke (expired key, prompt drift) or answered a slightly wrong question."],
+    ["Why?","There's no owner after launch, and managers don't trust it with customer data."],
+    ["Why does that matter?","Users go back to the old sheet. Trust drops, and the next ask starts from scepticism."],
+    ["Bedrock","Sunk build cost plus maintenance that pulls the same engineers back in.","money"],
+    ["Bedrock","Unowned flows running in production; more builders means more of them.","risk"]]};
+let b="A",n=0;const R=document.getElementById("rungs");
+function draw(){R.innerHTML=L[b].map((r,i)=>`<li class="rung ${i<n?"show":""} ${r[2]?"bed":""}"><div class="q">${r[0]} ${r[2]?`<span class="tag ${r[2]}">${r[2]}</span>`:""}</div>${r[1]}</li>`).join("")}
+document.querySelectorAll("#branches .btn").forEach(x=>x.onclick=()=>{document.querySelectorAll("#branches .btn").forEach(y=>y.classList.remove("on"));x.classList.add("on");b=x.dataset.b;n=0;draw()});
+next.onclick=()=>{if(n<L[b].length)n++;draw()};all.onclick=()=>{n=L[b].length;draw()};reset.onclick=()=>{n=0;draw()};draw();
+const S=[["Rigour",4,5,3],["Follows the rules",5,5,1],["Reaches money/growth/risk",4,5,4],["Testability",2,5,1],["Honesty about data",5,4,1],["Hand-in readiness",2,4,3]];
+const T=document.getElementById("score");S.forEach(r=>T.insertAdjacentHTML("beforeend",`<tr><td>${r[0]}</td>${r.slice(1).map(v=>`<td>${v}/5<div class="bar"><i style="width:${v*20}%"></i></div></td>`).join("")}</tr>`));
+const tot=[1,2,3].map(i=>S.reduce((a,r)=>a+r[i],0));T.insertAdjacentHTML("beforeend",`<tr><td><strong>Total</strong></td>${tot.map(t=>`<td><strong>${t}/30</strong></td>`).join("")}</tr>`);
+const Q=[["Why does it matter that it's slow?","Because lead time is longer than the life of the need. Work that ships after its deadline has been cancelled, not delayed. That's money (specialist hours on expired work) and growth (capped by the specialist pool)."],
+ ["Why has the team stopped using it?","Separate two meanings of \"it\". The request path: people route around it into DMs and personal AI tools, which is risk. What shipped: it broke, didn't fit, or had no owner, which is money and risk."],
+ ["Which part of the sentence have you actually seen?","Only the queue. \"Need more workflows\" is a goal, and \"can't build\" is an assumed cause."],
+ ["Of what shipped, what still runs at day 30?","This is the hinge. If most of it runs, the constraint is capacity. If not, it's conversion: trust, fit, and ownership."],
+ ["Pushback: just hire more engineers.","That's ToC step 4, elevate. Exploit and subordinate first. If half of what ships goes unused, more builders means more unused flows."],
+ ["Pushback: so your answer is a self-service platform?","No. That's a solution. The diagnosis tells us what to measure before choosing a fix."],
+ ["Pushback: you made up the six weeks.","Yes, and it's labelled hypothetical. What matters is lead time against how long the need stays valid. Real figures would come from the last 20 tickets."],
+ ["Pushback: 5 Whys is too simplistic.","Agreed. It follows one line of cause, which is why I branch twice and test five competing hypotheses."],
+ ["Pushback: what if people really can't build?","Then trained people would ship flows that get used. If they don't, the cause is ownership or trust, not skill."],
+ ["Name the constraint in one sentence.","There's no trusted path from a live business need to an owned, used workflow that doesn't run through a few specialists."]];
+qalist.innerHTML=Q.map(q=>`<details><summary>${q[0]}</summary><p>${q[1]}</p></details>`).join("");
+copy.onclick=()=>{const t=[...handtext.querySelectorAll("p")].map(p=>p.innerText).join("\n\n");
+ const done=()=>{copy.textContent="Copied ✓";setTimeout(()=>copy.textContent="Copy",1500)};
+ if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(done)}else{const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();done()}};
+window.addEventListener("beforeprint",()=>document.querySelectorAll("details").forEach(d=>d.open=true));
+const secs=[...document.querySelectorAll("section")],links=[...document.querySelectorAll("nav a")];
+addEventListener("scroll",()=>{let c=secs[0].id;secs.forEach(s=>{if(s.getBoundingClientRect().top<120)c=s.id});links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+c))});
+</script>
+</body></html>
